@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>本地新店拓客雷达 - 抖音买单 + 豆包找店</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #16a34a;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { background: #0f172a; color: #fff; padding: 12px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; position: sticky; top: 0; z-index: 20; }
+    .brand { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .brand span.badge { background: #2563eb; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 500; }
+    .top-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .btn { border: 1px solid transparent; border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; text-decoration: none; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-outline { background: #fff; color: var(--text); border-color: var(--border); }
+    .btn-outline:hover { background: #f8fafc; }
+    .btn-dark { background: #1e293b; color: #fff; border-color: #334155; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; }
+    .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+    .kpi-label { font-size: 12px; color: var(--muted); }
+    .kpi-val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+    .filters { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .filters input, .filters select { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; font-size: 13px; background: #fff; }
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .tag-S { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .tag-A { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .tag-B { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .tag-D { background: #f1f5f9; color: #64748b; }
+    .tag-agency { background: #fef2f2; color: #b91c1c; border: 1px solid #fca5a5; }
+    .tag-track-exp { background: #f3e8ff; color: #7e22ce; }
+    .tag-track-conv { background: #ecfdf5; color: #047857; }
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { background: #f8fafc; font-weight: 600; color: #475569; white-space: nowrap; }
+    .cards-wrap { display: none; gap: 12px; flex-direction: column; }
+    .lead-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+    .lead-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+    .lead-card-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.55); display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: #fff; border-radius: 12px; max-width: 620px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+    .modal h3 { font-size: 17px; margin-bottom: 12px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 13px; }
+    .pitch-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-size: 13px; white-space: pre-wrap; margin: 10px 0; }
+    @media (max-width: 900px) {
+      .table-wrap { display: none; }
+      .cards-wrap { display: flex; }
+    }
+    body.force-mobile .table-wrap { display: none; }
+    body.force-mobile .cards-wrap { display: flex; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      📡 本地新店拓客雷达
+      <span class="badge">抖音买单 + 豆包找店</span>
+    </div>
+    <div class="top-actions" id="headerActions" style="display:none;">
+      <span id="userBadge" style="font-size:13px;color:#cbd5e1;"></span>
+      <button class="btn btn-dark btn-sm" onclick="toggleMobileMode()">📱 切换扫街视图</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('importModal')">📥 导入工商表</button>
+      <button class="btn btn-success btn-sm" onclick="runVerification()">⚡ 一键核验新店</button>
+      <button class="btn btn-dark btn-sm" id="adminSettingsBtn" style="display:none;" onclick="openSettingsModal()">⚙️ 系统配置</button>
+      <button class="btn btn-dark btn-sm" onclick="logout()">退出</button>
+    </div>
+  </header>
+
+  <div class="container" id="mainApp" style="display:none;">
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="filters">
+      <select id="fPool" onchange="loadLeads()">
+        <option value="all">全部线索</option>
+        <option value="public">公海池（未认领）</option>
+        <option value="mine">我认领的</option>
+      </select>
+      <select id="fGrade" onchange="loadLeads()">
+        <option value="">全部等级 (S/A/B)</option>
+        <option value="S">S级 - 纯空白拓荒</option>
+        <option value="A">A级 - 有定位未认领</option>
+        <option value="B">B级 - 美团已开抖音空白</option>
+      </select>
+      <select id="fTrack" onchange="loadLeads()">
+        <option value="">全部业态双轨</option>
+        <option value="到店消费型">到店消费型（餐饮/丽人/休娱）</option>
+        <option value="便民实体型">便民实体型（五金/汽修/零售）</option>
+      </select>
+      <select id="fAction" onchange="loadLeads()">
+        <option value="">触达模式</option>
+        <option value="telesales">电销优先</option>
+        <option value="offline_visit">建议线下扫街（含代账）</option>
+      </select>
+      <select id="fStreet" onchange="loadLeads()">
+        <option value="">全部街道</option>
+      </select>
+      <select id="fStatus" onchange="loadLeads()">
+        <option value="">跟进状态</option>
+        <option value="待联系">待联系</option>
+        <option value="电话未接">电话未接</option>
+        <option value="已加微信">已加微信</option>
+        <option value="待线下扫街">待线下扫街</option>
+        <option value="已签约">已签约</option>
+        <option value="无意向">无意向</option>
+      </select>
+      <input type="text" id="fSearch" placeholder="搜店名 / 地址 / 电话..." onkeydown="if(event.key==='Enter')loadLeads()" />
+      <button class="btn btn-primary btn-sm" onclick="loadLeads()">筛选</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>等级/业态</th>
+            <th>门店与地址</th>
+            <th>电话与代账识别</th>
+            <th>三平台核验 & 一键快查</th>
+            <th>认领与状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="leadsTableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="cards-wrap" id="leadsCardsWrap"></div>
+  </div>
+
+  <!-- 登录弹窗 -->
+  <div class="modal-backdrop open" id="loginModal">
+    <div class="modal" style="max-width:380px;">
+      <h3>🔐 团队成员登录</h3>
+      <div class="form-group">
+        <label>账号 (默认管理员: admin / 123456；销售: sales1 / 1234)</label>
+        <input type="text" id="loginUser" value="admin" />
+      </div>
+      <div class="form-group">
+        <label>登录口令</label>
+        <input type="password" id="loginPin" value="123456" onkeydown="if(event.key==='Enter')doLogin()" />
+      </div>
+      <div id="loginErr" style="color:var(--danger);font-size:12px;margin-bottom:8px;"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">进入工作台</button>
+    </div>
+  </div>
+
+  <!-- 导入工商表弹窗 -->
+  <div class="modal-backdrop" id="importModal">
+    <div class="modal">
+      <h3>📥 导入企查查 / 天眼查 / 爱企查 Excel 或 CSV</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+        系统会自动完成：临街实体过滤、住宅/网约车剔除、全国连锁剔除、全局信用代码去重、以及同号多店“代账号码”标红转扫街。
+      </p>
+      <div class="form-group">
+        <input type="file" id="importFile" accept=".xlsx,.xls,.csv" />
+      </div>
+      <div id="importResult" style="font-size:13px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-outline" onclick="closeModal('importModal')">关闭</button>
+        <button class="btn btn-primary" onclick="submitImport()">开始导入清洗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 详情与话术跟进弹窗 -->
+  <div class="modal-backdrop" id="detailModal">
+    <div class="modal">
+      <h3 id="detailTitle">门店详情</h3>
+      <div id="detailMeta" style="font-size:13px;color:var(--muted);margin-bottom:8px;"></div>
+      <div class="pitch-box" id="detailPitch"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="detailManualVerifyBtns"></div>
+      <div class="form-group">
+        <label>更新跟进状态</label>
+        <select id="fuStatus">
+          <option value="待联系">待联系</option>
+          <option value="电话未接">电话未接</option>
+          <option value="已加微信">已加微信</option>
+          <option value="待线下扫街">待线下扫街</option>
+          <option value="已签约">已签约</option>
+          <option value="无意向">无意向</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>跟进备注</label>
+        <textarea id="fuNote" rows="2" placeholder="记录老板意向、门头实际招牌名等..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px;">
+        <button class="btn btn-outline" onclick="closeModal('detailModal')">关闭</button>
+        <button class="btn btn-primary" onclick="submitFollowup()">保存跟进记录</button>
+      </div>
+      <div id="detailLogs" style="font-size:12px;border-top:1px solid var(--border);padding-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- 系统配置弹窗（管理员） -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <h3>⚙️ 系统与团队配置</h3>
+      <div class="form-group">
+        <label>高德开放平台 Web服务 API Key</label>
+        <input type="text" id="cfgAmapKey" placeholder="输入高德 Web服务 Key" />
+      </div>
+      <div class="form-group">
+        <label>默认目标城市（如：成都市）</label>
+        <input type="text" id="cfgCity" placeholder="用于辅助高德地理编码" />
+      </div>
+      <div class="form-group">
+        <label>启用 Playwright 后台慢速核验</label>
+        <select id="cfgPw">
+          <option value="true">开启 (true)</option>
+          <option value="false">关闭，仅高德初筛+人工快查 (false)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveSettings()">保存系统配置</button>
+      <hr style="margin:16px 0;border:none;border-top:1px solid var(--border);" />
+      <h4 style="font-size:14px;margin-bottom:8px;">新增团队销售账号</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:8px;">
+        <input type="text" id="newUName" placeholder="账号如 sales3" style="padding:6px;border:1px solid var(--border);border-radius:6px;" />
+        <input type="text" id="newDName" placeholder="姓名如 小王" style="padding:6px;border:1px solid var(--border);border-radius:6px;" />
+        <input type="text" id="newUPin" placeholder="口令如 1234" style="padding:6px;border:1px solid var(--border);border-radius:6px;" />
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="createSalesUser()">+ 添加销售账号</button>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn btn-outline" onclick="closeModal('settingsModal')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let TOKEN = localStorage.getItem('radar_token') || '';
+  let CURRENT_USER = null;
+  let LEADS_CACHE = [];
+  let ACTIVE_LEAD_ID = null;
+
+  async function api(path, opts = {}) {
+    const headers = opts.headers || {};
+    if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+    const res = await fetch(path, { ...opts, headers });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      logout();
+      throw new Error(data.detail || '请重新登录');
+    }
+    if (!res.ok) throw new Error(data.detail || '请求失败');
+    return data;
+  }
+
+  function openModal(id) { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  function toggleMobileMode() { document.body.classList.toggle('force-mobile'); }
+
+  async function doLogin() {
+    const username = document.getElementById('loginUser').value.trim();
+    const pin = document.getElementById('loginPin').value.trim();
+    try {
+      const data = await api('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, pin }),
+      });
+      TOKEN = data.token;
+      CURRENT_USER = data.user;
+      localStorage.setItem('radar_token', TOKEN);
+      initWorkspace();
+    } catch (e) {
+      document.getElementById('loginErr').innerText = e.message;
+    }
+  }
+
+  function logout() {
+    TOKEN = '';
+    CURRENT_USER = null;
+    localStorage.removeItem('radar_token');
+    document.getElementById('mainApp').style.display = 'none';
+    document.getElementById('headerActions').style.display = 'none';
+    openModal('loginModal');
+  }
+
+  async function initWorkspace() {
+    try {
+      const me = await api('/api/auth/me');
+      CURRENT_USER = me.user;
+      closeModal('loginModal');
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('headerActions').style.display = 'flex';
+      document.getElementById('userBadge').innerText = `${CURRENT_USER.display_name} (${CURRENT_USER.role})`;
+      document.getElementById('adminSettingsBtn').style.display = CURRENT_USER.role === 'admin' ? 'inline-flex' : 'none';
+      await Promise.all([loadStats(), loadLeads()]);
+    } catch (e) {
+      logout();
+    }
+  }
+
+  async function loadStats() {
+    const s = await api('/api/stats');
+    document.getElementById('kpiGrid').innerHTML = `
+      <div class="kpi-card"><div class="kpi-label">有效实体新店</div><div class="kpi-val">${s.total}</div></div>
+      <div class="kpi-card"><div class="kpi-label">S级 纯空白</div><div class="kpi-val" style="color:#dc2626">${s.grade_s}</div></div>
+      <div class="kpi-card"><div class="kpi-label">A级 未认领</div><div class="kpi-val" style="color:#d97706">${s.grade_a}</div></div>
+      <div class="kpi-card"><div class="kpi-label">B级 美团已开</div><div class="kpi-val" style="color:#2563eb">${s.grade_b}</div></div>
+      <div class="kpi-card"><div class="kpi-label">代账号码(转扫街)</div><div class="kpi-val" style="color:#b91c1c">${s.agency_phone}</div></div>
+      <div class="kpi-card"><div class="kpi-label">公海待认领 / 我的</div><div class="kpi-val">${s.public_pool} / ${s.my_claimed}</div></div>
+      <div class="kpi-card"><div class="kpi-label">已签约转化</div><div class="kpi-val" style="color:#16a34a">${s.signed}</div></div>
+    `;
+    const streetSel = document.getElementById('fStreet');
+    const curVal = streetSel.value;
+    streetSel.innerHTML = '<option value="">全部街道</option>' +
+      s.streets.map(st => `<option value="${st.street_name}">${st.street_name} (${st.cnt})</option>`).join('');
+    streetSel.value = curVal;
+  }
+
+  async function loadLeads() {
+    const params = new URLSearchParams({
+      pool: document.getElementById('fPool').value,
+      grade: document.getElementById('fGrade').value,
+      store_track: document.getElementById('fTrack').value,
+      recommended_action: document.getElementById('fAction').value,
+      street_name: document.getElementById('fStreet').value,
+      follow_status: document.getElementById('fStatus').value,
+      q: document.getElementById('fSearch').value,
+    });
+    const data = await api('/api/leads?' + params.toString());
+    LEADS_CACHE = data.leads;
+    renderLeads();
+  }
+
+  function copyDoubaoPrompt(promptText) {
+    navigator.clipboard?.writeText(promptText).catch(() => {});
+    window.open('https://www.doubao.com/chat/', '_blank');
+  }
+
+  function renderLeads() {
+    const tbody = document.getElementById('leadsTableBody');
+    const cards = document.getElementById('leadsCardsWrap');
+    if (!LEADS_CACHE.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:30px;color:#64748b;">暂无符合条件的线索，点击右上角「导入工商表」上传数据</td></tr>';
+      cards.innerHTML = '<div class="lead-card" style="text-align:center;color:#64748b;">暂无线索</div>';
+      return;
+    }
+
+    tbody.innerHTML = LEADS_CACHE.map(l => {
+      const trackCls = l.store_track === '到店消费型' ? 'tag-track-exp' : 'tag-track-conv';
+      const agencyTag = l.is_agency_phone ? `<span class="tag tag-agency">⚠️ 疑似代账(关联${l.phone_freq}家) → 建议扫街</span>` : '';
+      const claimBtn = !l.claim_user_id
+        ? `<button class="btn btn-primary btn-sm" onclick="claimLead(${l.id})">认领</button>`
+        : (l.claim_user_id === CURRENT_USER.id || CURRENT_USER.role === 'admin'
+          ? `<button class="btn btn-outline btn-sm" onclick="releaseLead(${l.id})">退回公海</button>` : '');
+
+      return `<tr>
+        <td>
+          <span class="tag tag-${l.grade}">${l.grade}级</span><br/>
+          <span class="tag ${trackCls}" style="margin-top:4px;">${l.store_track}</span>
+        </td>
+        <td>
+          <strong>${l.core_trade_name || l.license_name}</strong>
+          <div style="font-size:11px;color:var(--muted);">执照：${l.license_name}</div>
+          <div style="font-size:12px;margin-top:2px;">📍 ${l.address}</div>
+          ${l.amap_poi_found ? `<div style="font-size:11px;color:#047857;">高德周边匹配: ${l.amap_poi_name} (${l.amap_match_score}分)</div>` : ''}
+        </td>
+        <td>
+          ${l.phone ? `<a href="tel:${l.phone}" style="font-weight:600;color:var(--primary);text-decoration:none;">📞 ${l.phone}</a>` : '<span style="color:var(--muted)">无电话</span>'}
+          <div style="margin-top:4px;">${agencyTag}</div>
+        </td>
+        <td>
+          <div style="font-size:12px;">抖音:${l.douyin_status} | 美团:${l.meituan_status}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">
+            <a class="btn btn-outline btn-sm" href="${l.jump_urls.douyin_search_url}" target="_blank">查抖音</a>
+            <a class="btn btn-outline btn-sm" href="${l.jump_urls.meituan_search_url}" target="_blank">查美团</a>
+            <button class="btn btn-outline btn-sm" onclick='copyDoubaoPrompt(${JSON.stringify(l.jump_urls.doubao_prompt)})'>问豆包</button>
+            <a class="btn btn-outline btn-sm" href="${l.jump_urls.amap_nav_url}" target="_blank">导航</a>
+          </div>
+        </td>
+        <td>
+          <div>${l.claim_user_name ? `👤 ${l.claim_user_name}` : '<span style="color:#16a34a">公海池</span>'}</div>
+          <div style="font-size:12px;font-weight:600;margin-top:2px;">${l.follow_status}</div>
+          ${l.last_note ? `<div style="font-size:11px;color:var(--muted);max-width:160px;">${l.last_note}</div>` : ''}
+        </td>
+        <td>
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            ${claimBtn}
+            <button class="btn btn-outline btn-sm" onclick="openDetail(${l.id})">话术/跟进</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    // 手机扫街卡片视图
+    cards.innerHTML = LEADS_CACHE.map(l => {
+      const claimBtn = !l.claim_user_id
+        ? `<button class="btn btn-primary btn-sm" onclick="claimLead(${l.id})">认领防撞</button>` : '';
+      return `<div class="lead-card">
+        <div class="lead-card-head">
+          <div>
+            <span class="tag tag-${l.grade}">${l.grade}级</span>
+            <span class="tag ${l.store_track === '到店消费型' ? 'tag-track-exp' : 'tag-track-conv'}">${l.store_track}</span>
+            ${l.is_agency_phone ? '<span class="tag tag-agency">代账转扫街</span>' : ''}
+            <div style="font-size:15px;font-weight:700;margin-top:4px;">${l.core_trade_name || l.license_name}</div>
+          </div>
+          <span style="font-size:12px;font-weight:600;">${l.follow_status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);">📍 ${l.address}</div>
+        <div class="lead-card-actions">
+          ${l.phone ? `<a class="btn btn-success btn-sm" href="tel:${l.phone}">📞 一键拨号</a>` : ''}
+          <a class="btn btn-primary btn-sm" href="${l.jump_urls.amap_nav_url}" target="_blank">🧭 高德导航</a>
+          <a class="btn btn-outline btn-sm" href="${l.jump_urls.douyin_search_url}" target="_blank">查抖音</a>
+          <a class="btn btn-outline btn-sm" href="${l.jump_urls.meituan_search_url}" target="_blank">查美团</a>
+          <button class="btn btn-outline btn-sm" onclick='copyDoubaoPrompt(${JSON.stringify(l.jump_urls.doubao_prompt)})'>问豆包</button>
+          ${claimBtn}
+          <button class="btn btn-outline btn-sm" onclick="openDetail(${l.id})">话术/跟进</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function claimLead(id) {
+    try {
+      await api(`/api/leads/${id}/claim`, { method: 'POST' });
+      await Promise.all([loadStats(), loadLeads()]);
+    } catch (e) { alert(e.message); }
+  }
+
+  async function releaseLead(id) {
+    await api(`/api/leads/${id}/release`, { method: 'POST' });
+    await Promise.all([loadStats(), loadLeads()]);
+  }
+
+  async function submitImport() {
+    const f = document.getElementById('importFile').files[0];
+    if (!f) return alert('请先选择 Excel 或 CSV 文件');
+    const fd = new FormData();
+    fd.append('file', f);
+    document.getElementById('importResult').innerText = '正在清洗入库中...';
+    try {
+      const res = await api('/api/leads/import', { method: 'POST', body: fd });
+      const s = res.summary;
+      document.getElementById('importResult').innerHTML =
+        `✅ 导入完成！共 ${s.total_rows} 行 → 成功入库 <b>${s.imported_rows}</b> 家实体新店，去重跳过 ${s.skipped_dup}，过滤住宅/非实体 ${s.filtered_invalid}，识别代账号码 ${s.agency_flagged}。`;
+      await Promise.all([loadStats(), loadLeads()]);
+    } catch (e) {
+      document.getElementById('importResult').innerText = '❌ ' + e.message;
+    }
+  }
+
+  async function runVerification() {
+    try {
+      const res = await api('/api/verify/run?limit=30', { method: 'POST' });
+      alert(`核验完成：处理 ${res.result.processed} 家，高德定位 ${res.result.amap_checked} 家，Playwright 核验 ${res.result.pw_checked} 家`);
+      await Promise.all([loadStats(), loadLeads()]);
+    } catch (e) { alert(e.message); }
+  }
+
+  async function openDetail(id) {
+    const l = LEADS_CACHE.find(x => x.id === id);
+    if (!l) return;
+    ACTIVE_LEAD_ID = id;
+    document.getElementById('detailTitle').innerText = l.core_trade_name || l.license_name;
+    document.getElementById('detailMeta').innerText = `执照全称：${l.license_name} | 信用代码：${l.credit_code || '无'} | 地址：${l.address}`;
+    document.getElementById('detailPitch').innerText = l.pitch_script || '';
+    document.getElementById('fuStatus').value = l.follow_status;
+    document.getElementById('fuNote').value = l.last_note || '';
+    document.getElementById('detailManualVerifyBtns').innerHTML = `
+      <span style="font-size:12px;color:var(--muted);">人工2秒复核修正：</span>
+      <button class="btn btn-outline btn-sm" onclick="quickVerify(${id}, 'not_found', 'not_found')">标为 S级(三无空白)</button>
+      <button class="btn btn-outline btn-sm" onclick="quickVerify(${id}, 'unclaimed_poi', 'not_found')">标为 A级(有POI未认领)</button>
+      <button class="btn btn-outline btn-sm" onclick="quickVerify(${id}, 'not_found', 'listed')">标为 B级(美团已开抖音空白)</button>
+      <button class="btn btn-outline btn-sm" onclick="quickVerify(${id}, 'claimed', 'listed')">标为 D级(已成熟)</button>
+    `;
+    const logs = await api(`/api/leads/${id}/logs`);
+    document.getElementById('detailLogs').innerHTML = logs.logs.length
+      ? '<b>跟进历史：</b>' + logs.logs.map(g => `<div style="margin-top:4px;">[${g.created_at}] ${g.user_name} → <b>${g.status_after}</b>：${g.note}</div>`).join('')
+      : '<span style="color:var(--muted)">暂无跟进记录</span>';
+    openModal('detailModal');
+  }
+
+  async function quickVerify(id, dy, mt) {
+    await api(`/api/leads/${id}/manual-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ douyin_status: dy, meituan_status: mt }),
+    });
+    closeModal('detailModal');
+    await Promise.all([loadStats(), loadLeads()]);
+  }
+
+  async function submitFollowup() {
+    await api(`/api/leads/${ACTIVE_LEAD_ID}/followup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        follow_status: document.getElementById('fuStatus').value,
+        note: document.getElementById('fuNote').value,
+      }),
+    });
+    closeModal('detailModal');
+    await Promise.all([loadStats(), loadLeads()]);
+  }
+
+  async function openSettingsModal() {
+    const res = await api('/api/settings');
+    document.getElementById('cfgAmapKey').value = res.settings.amap_api_key || '';
+    document.getElementById('cfgCity').value = res.settings.default_city || '';
+    document.getElementById('cfgPw').value = res.settings.enable_playwright || 'true';
+    openModal('settingsModal');
+  }
+
+  async function saveSettings() {
+    await api('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amap_api_key: document.getElementById('cfgAmapKey').value,
+        default_city: document.getElementById('cfgCity').value,
+        enable_playwright: document.getElementById('cfgPw').value,
+      }),
+    });
+    alert('配置已保存');
+  }
+
+  async function createSalesUser() {
+    try {
+      await api('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: document.getElementById('newUName').value,
+          display_name: document.getElementById('newDName').value,
+          pin: document.getElementById('newUPin').value,
+          role: 'sales',
+        }),
+      });
+      alert('销售账号已创建');
+    } catch (e) { alert(e.message); }
+  }
+
+  if (TOKEN) initWorkspace();
+</script>
+</body>
+</html>
