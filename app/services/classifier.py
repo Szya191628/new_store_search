@@ -64,7 +64,8 @@ SUFFIX_WORDS = (
     "商行", "商店", "百货店", "便利店", "餐饮店", "小吃店", "饭店", "茶饮店", "美容店",
     "美发店", "五金店", "建材店", "维修店", "汽车维修部", "店", "馆", "坊", "铺", "行",
 )
-STREET_EXTRACT_RE = re.compile(r"([\u4e00-\u9fa5]{2,10}(?:大道|大街|路|街|道|巷))")
+STREET_EXTRACT_RE = re.compile(r"(?:省|市|区|县|镇|乡)?([\u4e00-\u9fa5]{2,8}(?:大道|大街|路|街|道|巷))")
+ADMIN_PREFIX_RE = re.compile(r"^(?:[\u4e00-\u9fa5]{1,6}(?:省|市|区|县|镇|乡))+")
 
 
 def is_physical_store_address(address: str) -> Tuple[bool, str]:
@@ -135,5 +136,6 @@ def extract_core_trade_name(license_name: str) -> str:
 
 
 def extract_street_name(address: str) -> str:
-    m = STREET_EXTRACT_RE.search(address or "")
+    cleaned = ADMIN_PREFIX_RE.sub("", (address or "").strip())
+    m = STREET_EXTRACT_RE.search(cleaned)
     return m.group(1) if m else ""

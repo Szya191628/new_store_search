@@ -87,6 +87,11 @@ class AssignRequest(BaseModel):
     user_id: int
 
 
+class BatchAssignRequest(BaseModel):
+    lead_ids: List[int]
+    user_id: int
+
+
 class ManualVerifyRequest(BaseModel):
     douyin_status: str
     meituan_status: str
@@ -284,6 +289,22 @@ def release_lead(lead_id: int, user: Dict[str, Any] = Depends(get_current_user))
             (lead_id,),
         )
     return {"ok": True}
+
+
+@app.post("/api/leads/batch-assign")
+def batch_assign_leads(req: BatchAssignRequest, admin: Dict[str, Any] = Depends(require_admin)):
+    if not req.lead_ids:
+        raise HTTPException(status_code=400, detail="请选择至少一条线索")
+    with get_db() as db:
+        target = db.fetchone("SELECT id, display_name FROM users WHERE id = %s AND is_active = 1", (req.user_id,))
+        if not target:
+            raise HTTPException(status_code=404, detail="目标销售账号不存在")
+        placeholders = ",".join(["%s"] * len(req.lead_ids))
+        db.execute(
+            f"UPDATE leads SET claim_user_id = %s, claim_user_name = %s, updated_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
+            (target["id"], target["display_name"], *req.lead_ids),
+        )
+    return {"ok": True, "assigned_count": len(req.lead_ids), "claim_user_name": target["display_name"]}
 
 
 @app.post("/api/leads/{lead_id}/assign")
