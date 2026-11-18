@@ -29,6 +29,13 @@ class DBAdapter:
         cur.close()
         return last_id
 
+    def execute_rowcount(self, sql: str, params: tuple = ()) -> int:
+        cur = self.conn.cursor()
+        cur.execute(self._adapt_sql(sql), params)
+        rc = cur.rowcount
+        cur.close()
+        return rc
+
     def fetchone(self, sql: str, params: tuple = ()) -> Optional[Dict[str, Any]]:
         cur = self.conn.cursor()
         cur.execute(self._adapt_sql(sql), params)

@@ -269,10 +269,12 @@ def claim_lead(lead_id: int, user: Dict[str, Any] = Depends(get_current_user)):
             if lead["claim_user_id"] == user["id"]:
                 return {"ok": True, "message": "你已认领该线索"}
             raise HTTPException(status_code=409, detail=f"该线索已被 {lead['claim_user_name']} 认领，防止撞单")
-        db.execute(
+        updated = db.execute_rowcount(
             "UPDATE leads SET claim_user_id = %s, claim_user_name = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s AND claim_user_id IS NULL",
             (user["id"], user["display_name"], lead_id),
         )
+        if updated == 0:
+            raise HTTPException(status_code=409, detail="该线索刚刚已被他人认领，防止撞单")
     return {"ok": True, "claim_user_name": user["display_name"]}
 
 
@@ -291,33 +293,34 @@ def release_lead(lead_id: int, user: Dict[str, Any] = Depends(get_current_user))
     return {"ok": True}
 
 
+def _assign_leads(db: Any, lead_ids: List[int], user_id: int) -> Dict[str, Any]:
+    target = db.fetchone("SELECT id, display_name FROM users WHERE id = %s AND is_active = 1", (user_id,))
+    if not target:
+        raise HTTPException(status_code=404, detail="目标销售账号不存在")
+    placeholders = ",".join(["%s"] * len(lead_ids))
+    updated = db.execute_rowcount(
+        f"UPDATE leads SET claim_user_id = %s, claim_user_name = %s, updated_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
+        (target["id"], target["display_name"], *lead_ids),
+    )
+    return {"assigned_count": updated, "claim_user_name": target["display_name"]}
+
+
 @app.post("/api/leads/batch-assign")
 def batch_assign_leads(req: BatchAssignRequest, admin: Dict[str, Any] = Depends(require_admin)):
     if not req.lead_ids:
         raise HTTPException(status_code=400, detail="请选择至少一条线索")
     with get_db() as db:
-        target = db.fetchone("SELECT id, display_name FROM users WHERE id = %s AND is_active = 1", (req.user_id,))
-        if not target:
-            raise HTTPException(status_code=404, detail="目标销售账号不存在")
-        placeholders = ",".join(["%s"] * len(req.lead_ids))
-        db.execute(
-            f"UPDATE leads SET claim_user_id = %s, claim_user_name = %s, updated_at = CURRENT_TIMESTAMP WHERE id IN ({placeholders})",
-            (target["id"], target["display_name"], *req.lead_ids),
-        )
-    return {"ok": True, "assigned_count": len(req.lead_ids), "claim_user_name": target["display_name"]}
+        res = _assign_leads(db, req.lead_ids, req.user_id)
+    return {"ok": True, **res}
 
 
 @app.post("/api/leads/{lead_id}/assign")
 def assign_lead(lead_id: int, req: AssignRequest, admin: Dict[str, Any] = Depends(require_admin)):
     with get_db() as db:
-        target = db.fetchone("SELECT id, display_name FROM users WHERE id = %s AND is_active = 1", (req.user_id,))
-        if not target:
-            raise HTTPException(status_code=404, detail="目标销售账号不存在")
-        db.execute(
-            "UPDATE leads SET claim_user_id = %s, claim_user_name = %s, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
-            (target["id"], target["display_name"], lead_id),
-        )
-    return {"ok": True, "claim_user_name": target["display_name"]}
+        res = _assign_leads(db, [lead_id], req.user_id)
+        if res["assigned_count"] == 0:
+            raise HTTPException(status_code=404, detail="线索不存在")
+    return {"ok": True, "claim_user_name": res["claim_user_name"]}
 
 
 @app.post("/api/leads/{lead_id}/followup")
@@ -356,8 +359,9 @@ def manual_verify(lead_id: int, req: ManualVerifyRequest, user: Dict[str, Any] =
         lead = db.fetchone("SELECT * FROM leads WHERE id = %s", (lead_id,))
         if not lead:
             raise HTTPException(status_code=404, detail="线索不存在")
+        amap_found = 0 if (req.douyin_status == "not_found" and req.meituan_status == "not_found") else lead["amap_poi_found"]
         grading = compute_lead_grade(
-            amap_poi_found=lead["amap_poi_found"],
+            amap_poi_found=amap_found,
             douyin_status=req.douyin_status,
             meituan_status=req.meituan_status,
         )
